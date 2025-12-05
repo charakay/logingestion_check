@@ -1,164 +1,202 @@
 # Azure Diagnostic Settings Checker
 
-This repository contains a Bash script (`logingestion.sh`) that audits Azure resources across multiple subscriptions and verifies whether **Diagnostic Settings** are configured and whether logs are being sent to a **Log Analytics Workspace (LAW)**.
+A Bash script to audit diagnostic settings across multiple Azure subscriptions and resource types, generating a comprehensive CSV report of which resources are sending logs to Log Analytics workspaces.
 
-The script is useful for:
-- Compliance checks  
-- Monitoring validation  
-- Incident response readiness  
-- Ensuring all workloads are sending logs to LA  
+## Overview
 
----
+This script iterates through specified Azure subscriptions and checks whether diagnostic settings are enabled for various resource types. It identifies which resources are configured to send logs to Log Analytics (LA) workspaces and exports the results to a CSV file for analysis.
 
-## 🔍 Overview
+## Features
 
-The script performs the following tasks:
+- ✅ Multi-subscription support
+- ✅ Checks 25+ Azure resource types
+- ✅ Identifies Log Analytics workspace configurations
+- ✅ CSV output for easy analysis and reporting
+- ✅ Error logging for troubleshooting
+- ✅ Handles missing or inaccessible resources gracefully
 
-1. Iterates through a list of Azure subscriptions.  
-2. Scans each subscription for a predefined set of Azure resource types.  
-3. Checks each resource for Diagnostic Settings.  
-4. Identifies whether logs are being ingested into a Log Analytics Workspace.  
-5. Outputs a structured CSV report.  
-6. Logs all errors to an error log.
+## Prerequisites
 
----
+- **Azure CLI** - Must be installed and authenticated
+  - Install: [Azure CLI Installation Guide](https://docs.microsoft.com/cli/azure/install-azure-cli)
+  - Login: `az login`
+- **jq** - JSON processor for parsing Azure CLI output
+  - Install on Ubuntu/Debian: `sudo apt-get install jq`
+  - Install on macOS: `brew install jq`
+  - Install on Windows: Download from [jq website](https://stedolan.github.io/jq/)
+- **Bash** - Version 4.0 or higher recommended
+- **Azure Permissions** - Reader access (minimum) to the subscriptions being audited
 
-## 📁 Files Generated
+## Supported Resource Types
 
-### **diagnostic_settings_results.csv**
-Contains the final output, showing log ingestion status per resource.
+The script checks the following Azure resource types:
 
-### **errors.log**
-Captures failures such as:
-- Permission issues  
-- API errors  
-- Invalid resource types  
+- Azure Kubernetes Service (AKS)
+- PostgreSQL Flexible Servers
+- Virtual Machines
+- Azure Firewalls
+- Front Door
+- Application Gateways
+- CDN Profiles
+- Azure Data Explorer (Kusto)
+- Event Hub Namespaces
+- Virtual Networks
+- Virtual Machine Scale Sets
+- Log Analytics Workspaces
+- Stream Analytics Jobs
+- Recovery Services Vaults
+- Network Security Groups
+- Public IP Addresses
+- Storage Accounts
+- Key Vaults
+- SQL Servers
+- MySQL Servers
+- App Services
+- Cosmos DB
+- Traffic Manager Profiles
+- Entra Identity
 
----
+## Installation
 
-## 🧰 Prerequisites
-
-Ensure the following tools are installed before running the script:
-
-### **Azure CLI**
+1. Clone or download the script:
 ```bash
-brew install azure-cli
-jq (for JSON parsing)
-bash
-Copy code
-brew install jq
-Login to Azure
-bash
-Copy code
+wget https://your-repo/diagnostic_checker.sh
+# or
+curl -O https://your-repo/diagnostic_checker.sh
+```
+
+2. Make the script executable:
+```bash
+chmod +x diagnostic_checker.sh
+```
+
+3. Edit the script to add your subscription IDs:
+```bash
+nano diagnostic_checker.sh
+```
+
+## Configuration
+
+Before running the script, update the `SUBSCRIPTIONS` array with your Azure subscription IDs:
+
+```bash
+SUBSCRIPTIONS=(
+    "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+    "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz"
+)
+```
+
+### Optional Configuration
+
+You can modify these variables at the top of the script:
+
+- `OUTPUT_CSV` - Name of the output CSV file (default: `diagnostic_settings_results.csv`)
+- `ERROR_LOG` - Name of the error log file (default: `errors.log`)
+- `SUPPORTED_RESOURCE_TYPES` - Add or remove resource types to check
+
+## Usage
+
+Run the script:
+
+```bash
+./diagnostic_checker.sh
+```
+
+The script will:
+1. Iterate through each subscription
+2. Query resources of each supported type
+3. Check diagnostic settings for each resource
+4. Write results to CSV and errors to log file
+
+### Example Output
+
+Progress will be displayed in the terminal:
+```
+Checking subscription: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  Checking resources of type: Microsoft.ContainerService/managedClusters
+    Processing: /subscriptions/.../resourceGroups/.../providers/Microsoft.ContainerService/managedClusters/my-aks
+  Checking resources of type: Microsoft.Compute/virtualMachines
+    Processing: /subscriptions/.../resourceGroups/.../providers/Microsoft.Compute/virtualMachines/my-vm
+...
+Completed. Results in: diagnostic_settings_results.csv
+Errors in: errors.log
+```
+
+## Output Files
+
+### CSV Report (`diagnostic_settings_results.csv`)
+
+Contains the following columns:
+
+| Column | Description |
+|--------|-------------|
+| `subscription_id` | Azure subscription ID |
+| `resource_id` | Full resource ID |
+| `resource_type` | Azure resource type |
+| `diagnostic_enabled` | Whether diagnostic settings exist (`true`/`false`) |
+| `sending_to_LA` | Whether logs are sent to Log Analytics (`yes`/`no`) |
+| `workspace_id` | Log Analytics workspace ID (if configured) |
+
+Example:
+```csv
+subscription_id,resource_id,resource_type,diagnostic_enabled,sending_to_LA,workspace_id
+xxx-xxx,/subscriptions/.../my-aks,Microsoft.ContainerService/managedClusters,true,yes,/subscriptions/.../workspaces/my-workspace
+```
+
+### Error Log (`errors.log`)
+
+Contains any errors encountered during execution, such as:
+- Authentication failures
+- Permission issues
+- Resource access errors
+- API failures
+
+## Troubleshooting
+
+### Common Issues
+
+**Authentication Errors**
+```bash
+# Re-authenticate with Azure
 az login
-You must have at least Reader access on the subscriptions being scanned.
+az account list
+```
 
-⚙️ Configuration
-Before running, modify the script to include your subscription IDs:
+**Permission Denied**
+- Ensure you have at least Reader role on the subscriptions
+- Check that diagnostic settings can be read (may require Monitoring Reader role)
 
-bash
-Copy code
-SUBSCRIPTIONS=(
-    "your-subscription-id-1"
-    "your-subscription-id-2"
-)
-Resource types are defined inside the SUPPORTED_RESOURCE_TYPES array.
-You may add or remove resource types depending on your environment.
+**jq Command Not Found**
+```bash
+# Install jq
+sudo apt-get install jq  # Ubuntu/Debian
+brew install jq          # macOS
+```
 
-🚀 Usage
-1. Make the script executable:
-bash
-Copy code
-chmod +x logingestion.sh
-2. Run the script:
-bash
-Copy code
-./logingestion.sh
-3. After completion, view outputs:
-bash
-Copy code
-cat diagnostic_settings_results.csv
-cat errors.log
-📄 CSV Output Fields
-Column	Description
-subscription_id	Azure subscription ID
-resource_id	Full Azure resource identifier
-resource_type	Azure resource provider type
-diagnostic_enabled	Whether Diagnostic Settings exist (true/false)
-sending_to_LA	Whether logs are being sent to Log Analytics
-workspace_id	The LAW workspace ID (if configured)
+**Script Hangs or Runs Slowly**
+- Large subscriptions may take time to process
+- Consider reducing the number of resource types
+- Run during off-peak hours
 
-Example row:
+## Performance Considerations
 
-bash
-Copy code
-1234-5678-9012,/subscriptions/.../resourceGroups/.../providers/Microsoft.Compute/virtualMachines/vm1,Microsoft.Compute/virtualMachines,true,yes,/subscriptions/.../workspaces/law1
-🛠 Customization
-Modify resource types
-Add/remove items in:
+- Processing time depends on the number of subscriptions, resource types, and resources
+- Large environments may take 30+ minutes to complete
+- Consider running in a screen/tmux session for long-running operations
 
-bash
-Copy code
-SUPPORTED_RESOURCE_TYPES=(
-    "Microsoft.Compute/virtualMachines"
-    "Microsoft.Network/networkSecurityGroups"
-    "Microsoft.Storage/storageAccounts"
-    ...
-)
-Modify subscriptions
-bash
-Copy code
-SUBSCRIPTIONS=(
-    "sub-1"
-    "sub-2"
-    "sub-3"
-)
-Change output filenames
-Edit these variables:
+## License
 
-bash
-Copy code
-OUTPUT_CSV="diagnostic_settings_results.csv"
-ERROR_LOG="errors.log"
-⚠️ Error Handling
-All errors are logged in:
+This script is provided as-is without warranty. Modify and use at your own risk.
 
-lua
-Copy code
-errors.log
-Common errors include:
+## Contributing
 
-Missing permissions
+To add support for additional resource types, update the `SUPPORTED_RESOURCE_TYPES` array with the appropriate Azure resource type identifier.
 
-Azure CLI failure
+## Author
 
-Unsupported resource types
+Created for Azure infrastructure auditing and compliance reporting.
 
-API throttling
+## Version History
 
-🧪 Testing
-You can test a single subscription by modifying:
-
-bash
-Copy code
-SUBSCRIPTIONS=("your-subscription-id")
-You can also reduce scanning time by temporarily limiting resource types:
-
-bash
-Copy code
-SUPPORTED_RESOURCE_TYPES=("Microsoft.Compute/virtualMachines")
-📘 Example Script Snippet
-bash
-Copy code
-SUPPORTED_RESOURCE_TYPES=(
-    "Microsoft.Compute/virtualMachines"
-    "Microsoft.Network/networkSecurityGroups"
-    "Microsoft.Storage/storageAccounts"
-)
-🤝 Contributions
-Pull requests are welcome.
-For major changes, create an issue to discuss your ideas first.
-
-📄 License
-This project is licensed under the MIT License.
-
+- **v1.0** - Initial release with 25 resource types supported
