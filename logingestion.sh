@@ -19,7 +19,7 @@ SUPPORTED_RESOURCE_TYPES=(
     "Microsoft.Network/applicationGateways"
     "Microsoft.Cdn/profiles"
     "Microsoft.Kusto/clusters"
-    "Microsoft.EventHub/namespaces"
+    #"Microsoft.EventHub/namespaces"
     #"Microsoft.Network/virtualNetworks"
     "Microsoft.Compute/virtualMachineScaleSets"
     "Microsoft.OperationalInsights/workspaces"
