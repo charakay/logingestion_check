@@ -34,7 +34,7 @@ SUPPORTED_RESOURCE_TYPES=(
     "Microsoft.DBforMySQL/servers"
     "Microsoft.Web/sites"
     "Microsoft.DocumentDB/databaseAccounts"
-    "Microsoft.Network/trafficManagerProfiles"
+    #"Microsoft.Network/trafficManagerProfiles"
     "Microsoft.Entra/identity"
 )
 
