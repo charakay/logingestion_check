@@ -24,7 +24,7 @@ SUPPORTED_RESOURCE_TYPES=(
     "Microsoft.Compute/virtualMachineScaleSets"
     "Microsoft.OperationalInsights/workspaces"
     "Microsoft.StreamAnalytics/streamingJobs"
-    "Microsoft.RecoveryServices/vaults"
+    #"Microsoft.RecoveryServices/vaults"
     "Microsoft.ContainerService/managedClusters"
     #"Microsoft.Network/networkSecurityGroups"
     "Microsoft.Network/publicIPAddresses"
